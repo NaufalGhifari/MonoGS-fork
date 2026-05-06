@@ -27,7 +27,50 @@ from gaussian_splatting.utils.system_utils import mkdir_p
 from utils.logging_utils import Log
 
 
+# def evaluate_evo(poses_gt, poses_est, plot_dir, label, monocular=False):
+#     ## Plot
+#     traj_ref = PosePath3D(poses_se3=poses_gt)
+#     traj_est = PosePath3D(poses_se3=poses_est)
+#     traj_est_aligned = trajectory.align_trajectory(
+#         traj_est, traj_ref, correct_scale=monocular
+#     )
+
+#     ## RMSE
+#     pose_relation = metrics.PoseRelation.translation_part
+#     data = (traj_ref, traj_est_aligned)
+#     ape_metric = metrics.APE(pose_relation)
+#     ape_metric.process_data(data)
+#     ape_stat = ape_metric.get_statistic(metrics.StatisticsType.rmse)
+#     ape_stats = ape_metric.get_all_statistics()
+#     Log("RMSE ATE \[m]", ape_stat, tag="Eval")
+
+#     with open(
+#         os.path.join(plot_dir, "stats_{}.json".format(str(label))),
+#         "w",
+#         encoding="utf-8",
+#     ) as f:
+#         json.dump(ape_stats, f, indent=4)
+
+#     plot_mode = evo.tools.plot.PlotMode.xy
+#     fig = plt.figure()
+#     ax = evo.tools.plot.prepare_axis(fig, plot_mode)
+#     ax.set_title(f"ATE RMSE: {ape_stat}")
+#     evo.tools.plot.traj(ax, plot_mode, traj_ref, "--", "gray", "gt")
+#     evo.tools.plot.traj_colormap(
+#         ax,
+#         traj_est_aligned,
+#         ape_metric.error,
+#         plot_mode,
+#         min_map=ape_stats["min"],
+#         max_map=ape_stats["max"],
+#     )
+#     ax.legend()
+#     plt.savefig(os.path.join(plot_dir, "evo_2dplot_{}.png".format(str(label))), dpi=90)
+
+#     return ape_stat
+
 def evaluate_evo(poses_gt, poses_est, plot_dir, label, monocular=False):
+    ## Modified to work with matplotlib Agg for headless runs
     ## Plot
     traj_ref = PosePath3D(poses_se3=poses_gt)
     traj_est = PosePath3D(poses_se3=poses_est)
@@ -42,7 +85,7 @@ def evaluate_evo(poses_gt, poses_est, plot_dir, label, monocular=False):
     ape_metric.process_data(data)
     ape_stat = ape_metric.get_statistic(metrics.StatisticsType.rmse)
     ape_stats = ape_metric.get_all_statistics()
-    Log("RMSE ATE \[m]", ape_stat, tag="Eval")
+    Log("RMSE ATE [m]", ape_stat, tag="Eval")
 
     with open(
         os.path.join(plot_dir, "stats_{}.json".format(str(label))),
@@ -52,10 +95,15 @@ def evaluate_evo(poses_gt, poses_est, plot_dir, label, monocular=False):
         json.dump(ape_stats, f, indent=4)
 
     plot_mode = evo.tools.plot.PlotMode.xy
+    
+    # FIX: Explicitly handle the figure and axis
     fig = plt.figure()
     ax = evo.tools.plot.prepare_axis(fig, plot_mode)
     ax.set_title(f"ATE RMSE: {ape_stat}")
+    
     evo.tools.plot.traj(ax, plot_mode, traj_ref, "--", "gray", "gt")
+    
+    # FIX: Pass the 'fig' argument explicitly so evo knows where to 'steal space' for the colorbar
     evo.tools.plot.traj_colormap(
         ax,
         traj_est_aligned,
@@ -63,9 +111,14 @@ def evaluate_evo(poses_gt, poses_est, plot_dir, label, monocular=False):
         plot_mode,
         min_map=ape_stats["min"],
         max_map=ape_stats["max"],
+        fig=fig  # <--- THIS IS THE CRITICAL ADDITION
     )
+    
     ax.legend()
     plt.savefig(os.path.join(plot_dir, "evo_2dplot_{}.png".format(str(label))), dpi=90)
+    
+    # CLEANUP: Close the figure to free up memory in Colab
+    plt.close(fig) 
 
     return ape_stat
 
