@@ -70,23 +70,32 @@ from utils.logging_utils import Log
 #     return ape_stat
 
 def evaluate_evo(poses_gt, poses_est, plot_dir, label, monocular=False):
-    ## Modified to work with matplotlib Agg for headless runs
-    ## Plot
+    import matplotlib.pyplot as plt
+    import os
+    import json
+    from evo.core import metrics, trajectory
+    from evo.core.trajectory import PosePath3D
+    import evo.tools.plot
+    
+    ## 1. Prepare Trajectories
     traj_ref = PosePath3D(poses_se3=poses_gt)
     traj_est = PosePath3D(poses_se3=poses_est)
     traj_est_aligned = trajectory.align_trajectory(
         traj_est, traj_ref, correct_scale=monocular
     )
 
-    ## RMSE
+    ## 2. Calculate RMSE (APE)
     pose_relation = metrics.PoseRelation.translation_part
     data = (traj_ref, traj_est_aligned)
     ape_metric = metrics.APE(pose_relation)
     ape_metric.process_data(data)
     ape_stat = ape_metric.get_statistic(metrics.StatisticsType.rmse)
     ape_stats = ape_metric.get_all_statistics()
-    Log("RMSE ATE [m]", ape_stat, tag="Eval")
+    
+    # Log the result to console
+    print(f"Eval: RMSE ATE  {ape_stat}")
 
+    # Save stats to JSON
     with open(
         os.path.join(plot_dir, "stats_{}.json".format(str(label))),
         "w",
@@ -94,34 +103,41 @@ def evaluate_evo(poses_gt, poses_est, plot_dir, label, monocular=False):
     ) as f:
         json.dump(ape_stats, f, indent=4)
 
+    ## 3. Plotting (Headless-Safe)
     plot_mode = evo.tools.plot.PlotMode.xy
     
-    # FIX: Explicitly handle the figure and axis
+    # Create the figure and force it as the 'active' figure
     fig = plt.figure()
+    plt.figure(fig.number) 
+    
+    # Prepare axis for evo
     ax = evo.tools.plot.prepare_axis(fig, plot_mode)
     ax.set_title(f"ATE RMSE: {ape_stat}")
     
+    # Plot Ground Truth
     evo.tools.plot.traj(ax, plot_mode, traj_ref, "--", "gray", "gt")
     
-    # FIX: Pass the 'fig' argument explicitly so evo knows where to 'steal space' for the colorbar
+    # Plot Estimate with Colormap (Error Heatmap)
+    # Note: We do NOT pass fig=fig here to avoid TypeError in evo 1.11.0
     evo.tools.plot.traj_colormap(
         ax,
         traj_est_aligned,
         ape_metric.error,
         plot_mode,
         min_map=ape_stats["min"],
-        max_map=ape_stats["max"],
-        fig=fig  # <--- THIS IS THE CRITICAL ADDITION
+        max_map=ape_stats["max"]
     )
     
     ax.legend()
-    plt.savefig(os.path.join(plot_dir, "evo_2dplot_{}.png".format(str(label))), dpi=90)
     
-    # CLEANUP: Close the figure to free up memory in Colab
+    # Save the plot to the results directory
+    save_path = os.path.join(plot_dir, "evo_2dplot_{}.png".format(str(label)))
+    plt.savefig(save_path, dpi=90)
+    
+    # 4. Cleanup: Close figure to prevent VRAM/RAM accumulation in Colab
     plt.close(fig) 
 
     return ape_stat
-
 
 def eval_ate(frames, kf_ids, save_dir, iterations, final=False, monocular=False):
     trj_data = dict()
