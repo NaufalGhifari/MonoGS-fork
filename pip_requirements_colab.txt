@@ -7,6 +7,7 @@ munch
 plyfile==0.8.1
 tqdm
 trimesh
+matplotlib<3.8.0
 
 # Computer Vision & SLAM
 opencv-python==4.8.1.78
