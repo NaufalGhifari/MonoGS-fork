@@ -1,0 +1,28 @@
+# Core dependencies for MonoGS on Google Colab / Linux
+# Adapted from DGX environment.yml for pip installation
+
+# Numeric and Data
+numpy
+munch
+plyfile==0.8.1
+tqdm
+trimesh
+
+# Computer Vision & SLAM
+opencv-python==4.8.1.78
+open3d==0.17.0
+evo==1.11.0
+torchmetrics
+lpips
+imgviz
+
+# Graphics and Visualization
+PyOpenGL
+glfw
+PyGLM
+
+# Utilities and Logging
+wandb
+rich
+ruff
+ninja
