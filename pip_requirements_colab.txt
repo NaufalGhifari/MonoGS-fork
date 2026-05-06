@@ -2,7 +2,7 @@
 # Adapted from DGX environment.yml for pip installation
 
 # Numeric and Data
-numpy
+numpy<2
 munch
 plyfile==0.8.1
 tqdm
