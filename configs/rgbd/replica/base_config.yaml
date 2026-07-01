@@ -11,6 +11,7 @@ Dataset:
   sensor_type: 'depth'
   pcd_downsample: 128          # Changed (64 -> 128): Reduces initial point cloud density
   pcd_downsample_init: 64      # Changed (32 -> 64): Fewer initial points = fewer Gaussiansadaptive_pointsize: True
+  adaptive_pointsize: True
   point_size: 0.05
   type: 'replica'
   Calibration:
@@ -37,6 +38,7 @@ Training:
   init_gaussian_extent: 30
   tracking_itr_num: 60         # Changed (100 -> 60): Speeds up tracking, reduces active graph size
   mapping_itr_num: 100         # Changed (150 -> 100): Fewer mapping iterations saves memory per stepgaussian_update_every: 150
+  gaussian_update_every: 150
   gaussian_update_offset: 50
   gaussian_th: 0.7
   gaussian_extent: 1.0
@@ -45,11 +47,13 @@ Training:
   kf_interval: 8               # Changed (5 -> 8): Spares out keyframe creation to slow down model growth
   window_size: 5               # CRITICAL (8 -> 5): Reduces the local mapping bundle adjustment window size
   pose_window: 2               # Changed (3 -> 2): Reduces active tracking historyedge_threshold: 4
+  edge_threshold: 4
   rgb_boundary_threshold: 0.01
 
   kf_translation: 0.15         # Changed (0.08 -> 0.15): Generates fewer keyframes based on movement
   kf_min_translation: 0.10     # Changed (0.05 -> 0.10)
   kf_overlap: 0.8              # Changed (0.9 -> 0.8): Less aggressive keyframe overlappingprune_mode: 'slam'
+  prune_mode: 'slam'
   single_thread: True
   spherical_harmonics: False
   lr:
