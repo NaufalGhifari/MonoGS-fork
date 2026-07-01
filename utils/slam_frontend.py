@@ -14,6 +14,7 @@ from utils.multiprocessing_utils import clone_obj
 from utils.pose_utils import update_pose
 from utils.slam_utils import get_loss_tracking, get_median_depth
 
+from tqdm import tqdm
 
 class FrontEnd(mp.Process):
     def __init__(self, config):
@@ -329,6 +330,23 @@ class FrontEnd(mp.Process):
         tic = torch.cuda.Event(enable_timing=True)
         toc = torch.cuda.Event(enable_timing=True)
 
+        # --- PROGRESS TRACKER INITIALIZATION ---
+        total_frames = len(self.dataset)
+        print("\n" + "="*50)
+        print(f"MonoGS Frontend Process Initialized!")
+        print(f"Dataset: {self.config["Dataset"]["dataset_path"]}")
+        print(f"Total Dataset Size: {total_frames} frames")
+        print("="*50 + "\n")
+
+        progress_bar = tqdm(
+            total=total_frames, 
+            desc="Tracking & Mapping", 
+            unit="fr",
+            bar_format="{desc}: {n_fmt}/{total_fmt} |{bar}| [{elapsed}<{remaining}, {rate_fmt}]"
+        )
+        start_time = time.time()
+        # --------------------------------------
+
         while True:
             if self.q_vis2main.empty():
                 if self.pause:
@@ -494,3 +512,6 @@ class FrontEnd(mp.Process):
                 elif data[0] == "stop":
                     Log("Frontend Stopped.")
                     break
+            
+        progress_bar.close()
+        print(f"\n✅ Finished processing in {time.time() - start_time:.2f}s.")
