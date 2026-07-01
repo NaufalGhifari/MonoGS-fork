@@ -1,5 +1,5 @@
 inherit_from: "configs/rgbd/replica/base_config.yaml"
 Dataset:
   # dataset_path: "datasets/replica/room0/"
-  dataset_path: "tmp/Replica" # updated for Kaggle
+  dataset_path: "tmp/Replica/" # updated for Kaggle
   single_thread: True
