@@ -342,7 +342,7 @@ class FrontEnd(mp.Process):
             total=total_frames, 
             desc="Tracking & Mapping", 
             unit="fr",
-            bar_format="{desc}: {n_fmt}/{total_fmt} |{bar}| [{elapsed}<{remaining}, {rate_fmt}]\n"
+            bar_format="{desc}: {n_fmt}/{total_fmt} |{bar}| [{elapsed}<{remaining}, {rate_fmt}]"
         )
         start_time = time.time()
         # --------------------------------------
