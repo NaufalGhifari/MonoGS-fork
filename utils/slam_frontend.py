@@ -400,6 +400,7 @@ class FrontEnd(mp.Process):
                     self.initialize(cur_frame_idx, viewpoint)
                     self.current_window.append(cur_frame_idx)
                     cur_frame_idx += 1
+                    progress_bar.update(1)
                     continue
 
                 self.initialized = self.initialized or (
@@ -425,6 +426,7 @@ class FrontEnd(mp.Process):
                 if self.requested_keyframe > 0:
                     self.cleanup(cur_frame_idx)
                     cur_frame_idx += 1
+                    progress_bar.update(1)
                     continue
 
                 last_keyframe_idx = self.current_window[0]
@@ -475,6 +477,14 @@ class FrontEnd(mp.Process):
                 else:
                     self.cleanup(cur_frame_idx)
                 cur_frame_idx += 1
+
+                # Advance index & Update progress bar for standard processed frame
+                progress_bar.update(1)
+
+                # Optional metrics addition to postfix string
+                if cur_frame_idx % 5 == 0:
+                    fps = cur_frame_idx / (time.time() - start_time)
+                    progress_bar.set_postfix_str(f"Speed: {fps:.2f} FPS | KFs: {len(self.kf_indices)}")
 
                 if (
                     self.save_results
