@@ -2,8 +2,8 @@ import rich
 from rich.console import Console
 from tqdm import tqdm
 
-# Create an isolated console that captures output rather than printing it
-console = Console(capture=True)
+# Fix: Initialize without the unexpected 'capture' argument
+console = Console()
 
 _log_styles = {
     "MonoGS": "bold green",
@@ -22,9 +22,9 @@ def Log(*args, tag="MonoGS"):
     style = get_style(tag)
     message = f"[{style}]{tag}:[/{style}] " + " ".join(map(str, args))
 
-    # use rich to render the text with colors
+    # This context manager captures the styled string cleanly
     with console.capture() as capture:
         console.print(message)
 
-    # print w tqdm
+    # Hand it over to tqdm to print above the progress bar
     tqdm.write(capture.get().strip())
