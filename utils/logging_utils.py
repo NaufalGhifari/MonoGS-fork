@@ -1,8 +1,9 @@
 import rich
 from rich.console import Console
+from tqdm import tqdm
 
-# Create a global Console instance
-console = Console()
+# Create an isolated console that captures output rather than printing it
+console = Console(capture=True)
 
 _log_styles = {
     "MonoGS": "bold green",
@@ -10,14 +11,20 @@ _log_styles = {
     "Eval": "bold red",
 }
 
+
 def get_style(tag):
     if tag in _log_styles.keys():
         return _log_styles[tag]
     return "bold blue"
 
+
 def Log(*args, tag="MonoGS"):
     style = get_style(tag)
     message = f"[{style}]{tag}:[/{style}] " + " ".join(map(str, args))
 
-    # console.print automatically pushes logs to a new line above active tqdm bars
-    console.print(message)
+    # use rich to render the text with colors
+    with console.capture() as capture:
+        console.print(message)
+
+    # print w tqdm
+    tqdm.write(capture.get().strip())
