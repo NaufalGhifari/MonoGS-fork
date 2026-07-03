@@ -335,6 +335,8 @@ class FrontEnd(mp.Process):
         print("\n" + "="*50)
         print(f"MonoGS Frontend Process Initialized!")
         print(f"Dataset: {self.config["Dataset"]["dataset_path"]}")
+        print(f"Mono/RGBD mode: {self.config["Dataset"]["sensor_type"]}")
+        print(f"Force isotropic: {self.config["shape"]["force_isotropic"]}")
         print(f"Total Dataset Size: {total_frames} frames")
         print("="*50 + "\n")
 
