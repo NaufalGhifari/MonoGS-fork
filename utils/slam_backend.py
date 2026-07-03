@@ -55,8 +55,7 @@ class BackEnd(mp.Process):
                 mean_grad = self.gaussians._scaling.grad.mean(dim=-1, keepdim=True)
                 self.gaussians._scaling.grad = mean_grad.repeat(1, 3)     
 
-        # self.gaussians.optimizer.step()
-        self.gaussians_optimizer_step()
+        self.gaussians.optimizer.step()
 
     def set_hyperparams(self):
         self.save_results = self.config["Results"]["save_results"]
