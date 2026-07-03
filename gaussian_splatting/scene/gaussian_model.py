@@ -210,8 +210,12 @@ class GaussianModel:
             * point_size
         )
         scales = torch.log(torch.sqrt(dist2))[..., None]
-        if not self.isotropic:
-            scales = scales.repeat(1, 3)
+        # if not self.isotropic:
+        #     scales = scales.repeat(1, 3)
+        
+        # Always force 3 scales, even in iso (use same values for all 3) ===
+        scales = scales.repeat(1, 3)
+        # ==================================================================
 
         rots = torch.zeros((fused_point_cloud.shape[0], 4), device="cuda")
         rots[:, 0] = 1
