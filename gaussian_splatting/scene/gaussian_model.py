@@ -63,7 +63,8 @@ class GaussianModel:
         self.config = config
         self.ply_input = None
 
-        self.isotropic = False
+        # self.isotropic = False
+        self.isotropic = config["shape"]["force_isotropic"]
 
     def build_covariance_from_scaling_rotation(
         self, scaling, scaling_modifier, rotation
@@ -73,13 +74,34 @@ class GaussianModel:
         symm = strip_symmetric(actual_covariance)
         return symm
 
+    # @property
+    # def get_scaling(self):
+    #     return self.scaling_activation(self._scaling)
+
+    # @property
+    # def get_rotation(self):
+    #     return self.rotation_activation(self._rotation)
+
     @property
     def get_scaling(self):
-        return self.scaling_activation(self._scaling)
+        actual_scale = self.scaling_activation(self._scaling)
+        if self.isotropic:
+            # Enforce mathematical isotropy: make all 3 columns exactly identical
+            mean_scale = actual_scale.mean(dim=-1, keepdim=True)
+            return mean_scale.repeat(1, 3)
+        return actual_scale
 
     @property
     def get_rotation(self):
+        if self.isotropic:
+            # Enforce mathematical isotropy: completely neutralize rotation
+            device = self._rotation.device
+            num_points = self._rotation.shape[0]
+            identity_rot = torch.zeros((num_points, 4), device=device)
+            identity_rot[:, 0] = 1.0
+            return identity_rot
         return self.rotation_activation(self._rotation)
+
 
     @property
     def get_xyz(self):
@@ -605,10 +627,26 @@ class GaussianModel:
         stds = self.get_scaling[selected_pts_mask].repeat(N, 1)
         means = torch.zeros((stds.size(0), 3), device="cuda")
         samples = torch.normal(mean=means, std=stds)
-        rots = build_rotation(self._rotation[selected_pts_mask]).repeat(N, 1, 1)
-        new_xyz = torch.bmm(rots, samples.unsqueeze(-1)).squeeze(-1) + self.get_xyz[
-            selected_pts_mask
-        ].repeat(N, 1)
+        
+        # rots = build_rotation(self._rotation[selected_pts_mask]).repeat(N, 1, 1)
+        # new_xyz = torch.bmm(rots, samples.unsqueeze(-1)).squeeze(-1) + self.get_xyz[
+        #     selected_pts_mask
+        # ].repeat(N, 1)
+        
+        # ============================================================
+        if self.isotropic:
+            # Isotropic: Since rotation is an identity matrix, 
+            # the matrix multiplication (torch.bmm) collapses into a simple addition.
+            new_xyz = samples + self.get_xyz[selected_pts_mask].repeat(N, 1)
+        else:
+            # Original Anisotropic logic: Rotate the samples along the dominant ellipsoidal axes
+            rots = build_rotation(self._rotation[selected_pts_mask]).repeat(N, 1, 1)
+            new_xyz = torch.bmm(rots, samples.unsqueeze(-1)).squeeze(-1) + self.get_xyz[
+                selected_pts_mask
+            ].repeat(N, 1)
+        # ============================================================
+        
+
         new_scaling = self.scaling_inverse_activation(
             self.get_scaling[selected_pts_mask].repeat(N, 1) / (0.8 * N)
         )

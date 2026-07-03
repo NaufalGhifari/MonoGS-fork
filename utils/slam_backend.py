@@ -38,6 +38,26 @@ class BackEnd(mp.Process):
         self.initialized = not self.monocular
         self.keyframe_optimizers = None
 
+        self.force_isotropic = config["shape"]["force_isotropic"]
+
+    def gaussians_optimizer_step(self):
+        """Force Isotropic:
+        - zeroing out rotation gradients
+        - average the scaling gradient"""
+        
+        if self.force_isotropic:
+            # Zero out rotation gradients entirely
+            if self.gaussians._rotation.grad is not None:
+                self.gaussians._rotation.grad.zero_()
+
+            # Average the scaling gradients across the 3 dimensions so they scale uniformly
+            if self.gaussians._scaling.grad is not None:
+                mean_grad = self.gaussians._scaling.grad.mean(dim=-1, keepdim=True)
+                self.gaussians._scaling.grad = mean_grad.repeat(1, 3)     
+
+        # self.gaussians.optimizer.step()
+        self.gaussians_optimizer_step()
+
     def set_hyperparams(self):
         self.save_results = self.config["Results"]["save_results"]
 
@@ -131,8 +151,9 @@ class BackEnd(mp.Process):
                     self.iteration_count == self.opt_params.densify_from_iter
                 ):
                     self.gaussians.reset_opacity()
-
-                self.gaussians.optimizer.step()
+                
+                # self.gaussians.optimizer.step()
+                self.gaussians_optimizer_step()
                 self.gaussians.optimizer.zero_grad(set_to_none=True)
 
         self.occ_aware_visibility[cur_frame_idx] = (n_touched > 0).long()
@@ -304,7 +325,8 @@ class BackEnd(mp.Process):
                     self.gaussians.reset_opacity_nonvisible(visibility_filter_acm)
                     gaussian_split = True
 
-                self.gaussians.optimizer.step()
+                # self.gaussians.optimizer.step()
+                self.gaussians_optimizer_step()
                 self.gaussians.optimizer.zero_grad(set_to_none=True)
                 self.gaussians.update_learning_rate(self.iteration_count)
                 self.keyframe_optimizers.step()
@@ -347,7 +369,8 @@ class BackEnd(mp.Process):
                     self.gaussians.max_radii2D[visibility_filter],
                     radii[visibility_filter],
                 )
-                self.gaussians.optimizer.step()
+                # self.gaussians.optimizer.step()
+                self.gaussians_optimizer_step()
                 self.gaussians.optimizer.zero_grad(set_to_none=True)
                 self.gaussians.update_learning_rate(iteration)
         Log("Map refinement done")
