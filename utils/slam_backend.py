@@ -266,8 +266,7 @@ class BackEnd(mp.Process):
             loss_mapping.backward()
 
             ## LOCAL MAPPING GRADIENT LOGGING ================================
-            # The current active frame is the latest keyframe in the optimization window
-            resolved_frame_idx = current_window[-1] if current_window else 0
+            resolved_frame_idx = getattr(self, "iteration_count", -1)
             
             # Log full data for every 20th frame window
             if resolved_frame_idx % 20 == 0:
