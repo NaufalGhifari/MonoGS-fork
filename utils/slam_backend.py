@@ -38,7 +38,13 @@ class BackEnd(mp.Process):
         self.initialized = not self.monocular
         self.keyframe_optimizers = None
 
-        self.force_isotropic = config["shape"]["force_isotropic"]
+        self.force_isotropic = config["shape"].get("force_isotropic", False)
+        self.lambda_iso = config["Experiment"].get("lambda_iso", 10.0) # pull lambda_iso from config, default to 10 if not specified
+
+        print(f"\n EXPERIMENT CONFIG:")
+        print(f" self.force_isotropic loaded as: {self.force_isotropic} (Type: {type(self.force_isotropic).__name__})")
+        print(f" self.lambda_iso loaded as: {self.lambda_iso} (Type: {type(self.lambda_iso).__name__})\n")
+
 
     def gaussians_optimizer_step(self):
         """Force Isotropic:
@@ -248,7 +254,14 @@ class BackEnd(mp.Process):
 
             scaling = self.gaussians.get_scaling
             isotropic_loss = torch.abs(scaling - scaling.mean(dim=1).view(-1, 1))
-            loss_mapping += 10 * isotropic_loss.mean()
+            
+            ## ================================
+            ## Make lambda_iso be pulled from config
+            # loss_mapping += 10 * isotropic_loss.mean() # originally, hardcoded
+
+            loss_mapping += self.lambda_iso * isotropic_loss.mean()
+            ## ================================
+            
             loss_mapping.backward()
             gaussian_split = False
             ## Deinsifying / Pruning Gaussians
