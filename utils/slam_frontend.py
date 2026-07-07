@@ -1,3 +1,4 @@
+import os
 import time
 
 import numpy as np
@@ -9,7 +10,7 @@ from gaussian_splatting.utils.graphics_utils import getProjectionMatrix2, getWor
 from gui import gui_utils
 from utils.camera_utils import Camera
 from utils.eval_utils import eval_ate, save_gaussians
-from utils.logging_utils import Log
+from utils.logging_utils import Log, log_gradients_to_csv
 from utils.multiprocessing_utils import clone_obj
 from utils.pose_utils import update_pose
 from utils.slam_utils import get_loss_tracking, get_median_depth
@@ -175,6 +176,17 @@ class FrontEnd(mp.Process):
                 self.config, image, depth, opacity, viewpoint
             )
             loss_tracking.backward()
+
+            # >>> GRADIENT LOGGING <<<
+            named_params = [
+                ("cam_rot", viewpoint.cam_rot_delta),
+                ("cam_trans", viewpoint.cam_trans_delta),
+                ("exposure_a", viewpoint.exposure_a),
+                ("exposure_b", viewpoint.exposure_b)
+            ]
+            csv_path = os.path.join(self.save_dir, "tracking_gradients.csv")
+            log_gradients_to_csv(csv_path, cur_frame_idx, tracking_itr, loss_tracking.item(), named_params)
+            # >>> END OF GRADIENTS LOGGING <<<
 
             with torch.no_grad():
                 pose_optimizer.step()

@@ -1,3 +1,4 @@
+import os
 import random
 import time
 
@@ -7,7 +8,7 @@ from tqdm import tqdm
 
 from gaussian_splatting.gaussian_renderer import render
 from gaussian_splatting.utils.loss_utils import l1_loss, ssim
-from utils.logging_utils import Log
+from utils.logging_utils import Log, log_gradients_to_csv
 from utils.multiprocessing_utils import clone_obj
 from utils.pose_utils import update_pose
 from utils.slam_utils import get_loss_mapping
@@ -376,6 +377,28 @@ class BackEnd(mp.Process):
                 Ll1
             ) + self.opt_params.lambda_dssim * (1.0 - ssim(image, gt_image))
             loss.backward()
+
+            # Gradients logging ===============================================
+            if iteration % 100 == 0:
+                named_gaussian_params = [
+                    ("xyz", self.gaussians._xyz),
+                    ("scaling", self.gaussians._scaling),
+                    ("rotation", self.gaussians._rotation),
+                    ("opacity", self.gaussians._opacity)
+                ]
+                # Write to a distinct file so it stays isolated from live tracking logs
+                csv_path = os.path.join(self.config["Results"]["save_dir"], "color_refinement_gradients.csv")
+                
+                # Pass 9999 as a placeholder for frame_idx since this is a global batch step
+                log_gradients_to_csv(
+                    csv_path, 
+                    9999, 
+                    iteration, 
+                    loss.item(), 
+                    named_gaussian_params
+                )
+            # ==================================================================
+
             with torch.no_grad():
                 self.gaussians.max_radii2D[visibility_filter] = torch.max(
                     self.gaussians.max_radii2D[visibility_filter],
