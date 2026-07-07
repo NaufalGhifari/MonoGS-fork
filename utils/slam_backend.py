@@ -264,6 +264,29 @@ class BackEnd(mp.Process):
             ## ================================
             
             loss_mapping.backward()
+
+            ## LOCAL MAPPING GRADIENT LOGGING ================================
+            # The current active frame is the latest keyframe in the optimization window
+            resolved_frame_idx = current_window[-1] if current_window else 0
+            
+            # Log full data for every 20th frame window
+            if resolved_frame_idx % 20 == 0:
+                named_gaussian_params = [
+                    ("xyz", self.gaussians._xyz),
+                    ("opacity", self.gaussians._opacity),
+                    ("scaling", self.gaussians._scaling),
+                    ("rotation", self.gaussians._rotation)
+                ]
+                csv_path = os.path.join(self.config["Results"]["save_dir"], "local_mapping_gradients.csv")
+                
+                log_gradients_to_csv(
+                    csv_path, 
+                    resolved_frame_idx, 
+                    iters,  # Passes the 'iters' variable from your function signature
+                    loss_mapping.item(), 
+                    named_gaussian_params
+                )
+            ## ===============================================================
             gaussian_split = False
             ## Deinsifying / Pruning Gaussians
             with torch.no_grad():
