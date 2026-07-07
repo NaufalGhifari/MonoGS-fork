@@ -180,7 +180,7 @@ class BackEnd(mp.Process):
                 continue
             random_viewpoint_stack.append(viewpoint)
 
-        for _ in range(iters):
+        for step_idx in range(iters):
             self.iteration_count += 1
             self.last_sent += 1
 
@@ -282,7 +282,7 @@ class BackEnd(mp.Process):
                 log_gradients_to_csv(
                     csv_path, 
                     resolved_frame_idx, 
-                    iters,  # Passes the 'iters' variable from your function signature
+                    step_idx,
                     loss_mapping.item(), 
                     named_gaussian_params
                 )
