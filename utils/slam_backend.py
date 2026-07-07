@@ -266,31 +266,48 @@ class BackEnd(mp.Process):
             loss_mapping.backward()
 
             ## LOCAL MAPPING GRADIENT LOGGING ================================
-            # Filter out the permanent '0' anchor to find the true, active camera frame index
+            # Extract the real active frame index by removing the permanent 0 anchor
             valid_keyframes = [idx for idx in current_window if idx > 0]
             resolved_frame_idx = max(valid_keyframes) if valid_keyframes else 0
-            
-            # Print to console so you can visually verify it updates alongside your progress bar
-            print(f"DEBUG TRACKER -> Window: {current_window} | Identified Frame: {resolved_frame_idx}")
 
-            # Log data fields cleanly for every 20th timeline frame window
-            if resolved_frame_idx > 0 and resolved_frame_idx % 20 == 0:
-                named_gaussian_params = [
-                    ("xyz", self.gaussians._xyz),
-                    ("opacity", self.gaussians._opacity),
-                    ("scaling", self.gaussians._scaling),
-                    ("rotation", self.gaussians._rotation)
-                ]
-                csv_path = os.path.join(self.config["Results"]["save_dir"], "local_mapping_gradients.csv")
+            # # Log every keyframe optimization step, skipping only the 
+            # # background maintenance loops that collapse down to frame 0.
+            # if resolved_frame_idx > 0:
+            #     named_gaussian_params = [
+            #         ("xyz", self.gaussians._xyz),
+            #         ("opacity", self.gaussians._opacity),
+            #         ("scaling", self.gaussians._scaling),
+            #         ("rotation", self.gaussians._rotation)
+            #     ]
+            #     csv_path = os.path.join(self.config["Results"]["save_dir"], "local_mapping_gradients.csv")
                 
-                log_gradients_to_csv(
-                    csv_path, 
-                    resolved_frame_idx, 
-                    step_idx,
-                    loss_mapping.item(), 
-                    named_gaussian_params
-                )
+            #     log_gradients_to_csv(
+            #         csv_path, 
+            #         resolved_frame_idx, 
+            #         step_idx,
+            #         loss_mapping.item(), 
+            #         named_gaussian_params
+            #     )
+
+            # Log every keyframe optimization step
+            named_gaussian_params = [
+                ("xyz", self.gaussians._xyz),
+                ("opacity", self.gaussians._opacity),
+                ("scaling", self.gaussians._scaling),
+                ("rotation", self.gaussians._rotation)
+            ]
+            csv_path = os.path.join(self.config["Results"]["save_dir"], "local_mapping_gradients.csv")
+            
+            log_gradients_to_csv(
+                csv_path, 
+                resolved_frame_idx, 
+                step_idx,
+                loss_mapping.item(), 
+                named_gaussian_params
+            )
+            
             ## ===============================================================
+
             gaussian_split = False
             ## Deinsifying / Pruning Gaussians
             with torch.no_grad():
