@@ -266,12 +266,14 @@ class BackEnd(mp.Process):
             loss_mapping.backward()
 
             ## LOCAL MAPPING GRADIENT LOGGING ================================
-            # Extract the actual timeline frame index from the optimization window
-            resolved_frame_idx = current_window[-1] if current_window else -1
-            print(f"resolved_frame_idx: {resolved_frame_idx}")
+            # Filter out the permanent '0' anchor to find the true, active camera frame index
+            valid_keyframes = [idx for idx in current_window if idx > 0]
+            resolved_frame_idx = max(valid_keyframes) if valid_keyframes else 0
             
-            # 1. resolved_frame_idx > 0 ignores background maintenance loops running on frame 0
-            # 2. resolved_frame_idx % 20 == 0 locks logging strictly to every 20th video frame window
+            # Print to console so you can visually verify it updates alongside your progress bar
+            print(f"DEBUG TRACKER -> Window: {current_window} | Identified Frame: {resolved_frame_idx}")
+
+            # Log data fields cleanly for every 20th timeline frame window
             if resolved_frame_idx > 0 and resolved_frame_idx % 20 == 0:
                 named_gaussian_params = [
                     ("xyz", self.gaussians._xyz),
@@ -283,8 +285,8 @@ class BackEnd(mp.Process):
                 
                 log_gradients_to_csv(
                     csv_path, 
-                    resolved_frame_idx, # Logs: 20, 40, 60... steady on the video timeline
-                    step_idx,           # Logs: 0, 1, 2... counting up smoothly for that specific window
+                    resolved_frame_idx, 
+                    step_idx,
                     loss_mapping.item(), 
                     named_gaussian_params
                 )
