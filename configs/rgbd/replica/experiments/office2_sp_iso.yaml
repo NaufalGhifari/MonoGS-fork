@@ -1,0 +1,8 @@
+inherit_from: "configs/rgbd/replica/base_config.yaml"
+Dataset:
+  dataset_path: "datasets/replica/room0/"
+  single_thread: True
+shape:
+  force_isotropic: True
+Experiment:
+  lambda_iso: 10
