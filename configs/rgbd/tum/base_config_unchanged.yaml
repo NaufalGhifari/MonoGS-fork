@@ -4,7 +4,7 @@ Results:
   save_dir: "results"
   save_trj: True
   save_trj_kf_intv: 5
-  use_gui: True
+  use_gui: False
   eval_rendering: False
   use_wandb: False
 
@@ -81,3 +81,9 @@ model_params:
 pipeline_params:
   convert_SHs_python: False
   compute_cov3D_python: False
+
+Experiment:
+  lambda_iso: 10
+
+shape:
+  force_isotropic: False
