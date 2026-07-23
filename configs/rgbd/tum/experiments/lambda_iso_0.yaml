@@ -1,0 +1,6 @@
+inherit_from: "configs/rgbd/tum/base_config_unchanged.yaml"
+Dataset:
+  dataset_path: "datasets/tum/rgbd_dataset_freiburg1_desk"
+  single_thread: True
+Experiment:
+  lambda_iso: 0
