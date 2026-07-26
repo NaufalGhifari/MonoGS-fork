@@ -1,31 +1,25 @@
-# Baseline
+# MonoGS Replica Office 2
+
+# Baseline (lambda iso = 10, anisotropic)
 Eval: Total time 3407.94575
 Eval: Total FPS 0.5868638020426235
 Eval: RMSE ATE  0.002940337398337471
-Downloading: "https://download.pytorch.org/models/alexnet-owt-7be5be79.pth" to /root/.cache/torch/hub/checkpoints/alexnet-owt-7be5be79.pth
-100%|█████████████████████████████████████████| 233M/233M [00:01<00:00, 210MB/s]
-Eval: mean psnr: 34.05752822578727, ssim: 0.9398367977761602, lpips: 
-0.12531247667290948
-MonoGS: Starting color refinement
-100%|█████████████████████████████████████| 26000/26000 [15:40<00:00, 27.64it/s]
-MonoGS: Map refinement done
 Eval: mean psnr: 36.25068730936422, ssim: 0.9625995522969729, lpips: 
 0.07308525751743998
 
 ---
 # Isotropic
-# TODO
+Eval: Total time 3253.21425
+Eval: Total FPS 0.6147766013259041
+Eval: RMSE ATE  0.0031897394233931665
+Eval: mean psnr: 34.18473557027181, ssim: 0.9467688692410787, lpips: 
+0.11999491515755653
 
 ---
 # Lambda iso 0
 Eval: Total time 3762.8335
 Eval: Total FPS 0.5315143494922111
 Eval: RMSE ATE  0.004188528007793046
-Eval: mean psnr: 34.36486572245653, ssim: 0.9458587289792705, lpips: 
-0.1132001599530977
-MonoGS: Starting color refinement
-100%|█████████████████████████████████████| 26000/26000 [15:30<00:00, 27.96it/s]
-MonoGS: Map refinement done
 Eval: mean psnr: 35.48492506536514, ssim: 0.9550776573687948, lpips: 
 0.0971700205121443
 
@@ -34,11 +28,6 @@ Eval: mean psnr: 35.48492506536514, ssim: 0.9550776573687948, lpips:
 Eval: Total time 3477.60575
 Eval: Total FPS 0.5751083198548311
 Eval: RMSE ATE  0.003308891164858748
-Eval: mean psnr: 34.75896576652426, ssim: 0.94544352547789, lpips: 
-0.11227817101635058
-MonoGS: Starting color refinement
-100%|█████████████████████████████████████| 26000/26000 [15:36<00:00, 27.77it/s]
-MonoGS: Map refinement done
 Eval: mean psnr: 36.14885298494928, ssim: 0.9599707711655106, lpips: 
 0.08326186792615378
 
@@ -47,11 +36,6 @@ Eval: mean psnr: 36.14885298494928, ssim: 0.9599707711655106, lpips:
 Eval: Total time 3407.3225
 Eval: Total FPS 0.5869711481669257
 Eval: RMSE ATE  0.003169323036491898
-Eval: mean psnr: 34.37913732528686, ssim: 0.9414161112747694, lpips: 
-0.12124143134018309
-MonoGS: Starting color refinement
-100%|█████████████████████████████████████| 26000/26000 [15:33<00:00, 27.86it/s]
-MonoGS: Map refinement done
 Eval: mean psnr: 36.23569531691702, ssim: 0.9614164197131208, lpips: 
 0.07650430183857679
 
@@ -60,11 +44,6 @@ Eval: mean psnr: 36.23569531691702, ssim: 0.9614164197131208, lpips:
 Eval: Total time 3370.52425
 Eval: Total FPS 0.5933795017199476
 Eval: RMSE ATE  0.00278699777516933
-Eval: mean psnr: 33.7934850692749, ssim: 0.9402525404566213, lpips: 
-0.1246522999417625
-MonoGS: Starting color refinement
-100%|█████████████████████████████████████| 26000/26000 [15:39<00:00, 27.66it/s]
-MonoGS: Map refinement done
 Eval: mean psnr: 36.21509364780627, ssim: 0.9627159622154737, lpips: 
 0.06941260701829666
 
@@ -73,10 +52,5 @@ Eval: mean psnr: 36.21509364780627, ssim: 0.9627159622154737, lpips:
 Eval: Total time 3368.67575
 Eval: Total FPS 0.5937051080086886
 Eval: RMSE ATE  0.0024359564322976018
-Eval: mean psnr: 33.49758638227577, ssim: 0.9386894527054331, lpips: 
-0.12615360756339045
-MonoGS: Starting color refinement
-100%|█████████████████████████████████████| 26000/26000 [15:53<00:00, 27.27it/s]
-MonoGS: Map refinement done
 Eval: mean psnr: 36.14221205848315, ssim: 0.963386810012648, lpips: 
 0.06503928310721724
