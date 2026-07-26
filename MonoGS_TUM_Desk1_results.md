@@ -1,6 +1,9 @@
 # Baseline
-# TO ADD
-
+Eval: Total time 1053.854
+Eval: Total FPS 0.561747642462808
+Eval: RMSE ATE  0.014714020818158062
+Eval: mean psnr: 23.53452700311011, ssim: 0.784922997375111, lpips: 
+0.24750230797044523
 
 ---
 # Isotropic
