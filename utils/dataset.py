@@ -46,9 +46,16 @@ class ReplicaParser:
 
 
 class TUMParser:
-    def __init__(self, input_folder):
+    def __init__(self, input_folder, num_frames=None):
         self.input_folder = input_folder
         self.load_poses(self.input_folder, frame_rate=32)
+
+        if num_frames is not None:
+            self.color_paths = self.color_paths[:num_frames]
+            self.depth_paths = self.depth_paths[:num_frames]
+            self.poses = self.poses[:num_frames]
+            self.frames = self.frames[:num_frames]
+
         self.n_img = len(self.color_paths)
 
     def parse_list(self, filepath, skiprows=0):
@@ -397,7 +404,11 @@ class TUMDataset(MonocularDataset):
     def __init__(self, args, path, config):
         super().__init__(args, path, config)
         dataset_path = config["Dataset"]["dataset_path"]
-        parser = TUMParser(dataset_path)
+
+        parser = TUMParser(
+            dataset_path,
+            num_frames=config["Dataset"].get("num_frames", None))
+
         self.num_imgs = parser.n_img
         self.color_paths = parser.color_paths
         self.depth_paths = parser.depth_paths
