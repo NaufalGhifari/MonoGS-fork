@@ -51,6 +51,7 @@ class TUMParser:
         self.load_poses(self.input_folder, frame_rate=32)
 
         if num_frames is not None:
+            print(f"#\n# num_frames: {num_frames}\n#")
             self.color_paths = self.color_paths[:num_frames]
             self.depth_paths = self.depth_paths[:num_frames]
             self.poses = self.poses[:num_frames]
