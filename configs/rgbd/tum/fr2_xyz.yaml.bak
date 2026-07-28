@@ -1,4 +1,4 @@
-inherit_from: "configs/rgbd/tum/base_config_unchanged.yaml"
+inherit_from: "configs/rgbd/tum/base_config.yaml"
 
 Dataset:
   dataset_path: "datasets/tum/rgbd_dataset_freiburg2_xyz"
@@ -16,12 +16,3 @@ Dataset:
     width: 640
     height: 480
     depth_scale: 5000.0
-  
-  # Limit the number of frames
-  num_frames: 600
-
-Experiment:
-  lambda_iso: 10
-
-shape:
-  force_isotropic: False

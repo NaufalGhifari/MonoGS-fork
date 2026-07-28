@@ -1,0 +1,1 @@
+inherit_from: "configs/rgbd/tum/fr2_xyz.yaml"
