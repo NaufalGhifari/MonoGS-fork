@@ -1,0 +1,26 @@
+inherit_from: "configs/rgbd/custom/base_config.yaml"
+
+Results:
+  eval_rendering: False
+
+Dataset:
+  dataset_path: "datasets/IRoS_Table_1/"
+
+  Calibration:
+    fx: 525.0
+    fy: 525.0
+    cx: 319.5
+    cy: 239.5
+    
+    k1: 0.0
+    k2: 0.0
+    p1: 0.0
+    p2: 0.0
+    k3: 0.0
+    distorted: False
+    
+    width: 640
+    height: 480
+    
+    # Raw 16-bit depth PNG values are in millimeters (1000 units = 1 meter)
+    depth_scale: 1000.0
