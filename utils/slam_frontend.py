@@ -349,6 +349,7 @@ class FrontEnd(mp.Process):
         print(f"Dataset: {self.config['Dataset']['dataset_path']}")
         print(f"Mono/RGBD mode: {self.config['Dataset']['sensor_type']}")
         print(f"Force isotropic: {self.config['shape']['force_isotropic']}")
+        print(f"Use GUI: {self.config['Results']['use_gui']}")
         print(f"Total Dataset Size: {total_frames} frames")
         print("="*50 + "\n")
 

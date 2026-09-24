@@ -2,6 +2,7 @@ inherit_from: "configs/rgbd/custom/base_config.yaml"
 
 Results:
   eval_rendering: False
+  use_gui: True
 
 Dataset:
   dataset_path: "datasets/IRoS_Table_1/"
