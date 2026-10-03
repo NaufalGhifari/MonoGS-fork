@@ -1,7 +1,7 @@
 inherit_from: "configs/rgbd/custom/base_config.yaml"
 
 Results:
-  eval_rendering: False
+  eval_rendering: True
   use_gui: False
 
 Dataset:
@@ -25,4 +25,4 @@ Dataset:
     height: 480
     
     # Raw 16-bit depth PNG values are in millimeters (1000 units = 1 meter)
-    depth_scale: 1000.0
+    depth_scale: 5000.0
