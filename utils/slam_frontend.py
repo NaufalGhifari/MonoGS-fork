@@ -351,6 +351,7 @@ class FrontEnd(mp.Process):
         print(f"Force isotropic: {self.config['shape']['force_isotropic']}")
         print(f"Use GUI: {self.config['Results']['use_gui']}")
         print(f"Total Dataset Size: {total_frames} frames")
+        print(f"Eval rendering: {self.config['Results']['eval_rendering']}")
         print("="*50 + "\n")
 
         progress_bar = tqdm(
