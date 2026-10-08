@@ -6,7 +6,7 @@ Results:
   use_wandb: True
 
 Dataset:
-  dataset_path: "datasets/MLCV_Chair_2/"
+  dataset_path: "datasets/Room_Desk_1/"
   num_frames: -1
 
   Calibration:
