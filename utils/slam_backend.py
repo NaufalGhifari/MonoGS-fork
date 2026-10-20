@@ -11,6 +11,7 @@ from gaussian_splatting.utils.loss_utils import l1_loss, ssim
 from utils.logging_utils import Log, log_gradients_to_csv
 from utils.multiprocessing_utils import clone_obj
 from utils.pose_utils import update_pose
+from utils.results_utils import COLOR_REFINEMENT_ITERATIONS
 from utils.slam_utils import get_loss_mapping
 
 
@@ -399,7 +400,7 @@ class BackEnd(mp.Process):
     def color_refinement(self):
         Log("Starting color refinement")
 
-        iteration_total = 26000
+        iteration_total = COLOR_REFINEMENT_ITERATIONS
         for iteration in tqdm(range(1, iteration_total + 1)):
             viewpoint_idx_stack = list(self.viewpoints.keys())
             viewpoint_cam_idx = viewpoint_idx_stack.pop(

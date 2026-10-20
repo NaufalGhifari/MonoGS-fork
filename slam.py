@@ -21,12 +21,19 @@ from utils.dataset import load_dataset
 from utils.eval_utils import eval_ate, eval_rendering, save_gaussians
 from utils.logging_utils import Log
 from utils.multiprocessing_utils import FakeQueue
+from utils.results_utils import (
+    PhaseTimer,
+    ResourceSampler,
+    build_results_payload,
+    gaussian_count,
+    write_results_json,
+)
 from utils.slam_backend import BackEnd
 from utils.slam_frontend import FrontEnd
 
 
 class SLAM:
-    def __init__(self, config, save_dir=None):
+    def __init__(self, config, save_dir=None, config_path=None):
         start = torch.cuda.Event(enable_timing=True)
         end = torch.cuda.Event(enable_timing=True)
 
@@ -34,6 +41,9 @@ class SLAM:
 
         self.config = config
         self.save_dir = save_dir
+        self.config_path = config_path
+        self._phase_timer = PhaseTimer()
+        self._resources = ResourceSampler().start()
         model_params = munchify(config["model_params"])
         opt_params = munchify(config["opt_params"])
         pipeline_params = munchify(config["pipeline_params"])
@@ -110,7 +120,9 @@ class SLAM:
             time.sleep(5)
 
         backend_process.start()
-        self.frontend.run()
+        self._phase_timer.lap("setup")
+        with self._phase_timer.phase("online"):
+            self.frontend.run()
         backend_queue.put(["pause"])
 
         end.record()
@@ -121,81 +133,156 @@ class SLAM:
         Log("Total time", start.elapsed_time(end) * 0.001, tag="Eval")
         Log("Total FPS", N_frames / (start.elapsed_time(end) * 0.001), tag="Eval")
 
+        ATE = None
+        rendering_before = None
+        rendering_after = None
+        gaussians_after_tracking = None
+        gaussians_final = None
+
         if self.eval_rendering:
             self.gaussians = self.frontend.gaussians
             kf_indices = self.frontend.kf_indices
-            ATE = eval_ate(
-                self.frontend.cameras,
-                self.frontend.kf_indices,
-                self.save_dir,
-                0,
-                final=True,
-                monocular=self.monocular,
-            )
+            gaussians_after_tracking = gaussian_count(self.gaussians)
 
-            rendering_result = eval_rendering(
-                self.frontend.cameras,
-                self.gaussians,
-                self.dataset,
-                self.save_dir,
-                self.pipeline_params,
-                self.background,
-                kf_indices=kf_indices,
-                iteration="before_opt",
-            )
+            with self._phase_timer.phase("eval_before_opt"):
+                ATE = eval_ate(
+                    self.frontend.cameras,
+                    self.frontend.kf_indices,
+                    self.save_dir,
+                    0,
+                    final=True,
+                    monocular=self.monocular,
+                )
+
+                rendering_before = eval_rendering(
+                    self.frontend.cameras,
+                    self.gaussians,
+                    self.dataset,
+                    self.save_dir,
+                    self.pipeline_params,
+                    self.background,
+                    kf_indices=kf_indices,
+                    iteration="before_opt",
+                )
             columns = ["tag", "psnr", "ssim", "lpips", "RMSE ATE", "FPS"]
             metrics_table = wandb.Table(columns=columns)
             metrics_table.add_data(
                 "Before",
-                rendering_result["mean_psnr"],
-                rendering_result["mean_ssim"],
-                rendering_result["mean_lpips"],
+                rendering_before["mean_psnr"],
+                rendering_before["mean_ssim"],
+                rendering_before["mean_lpips"],
                 ATE,
                 FPS,
             )
 
-            # re-used the frontend queue to retrive the gaussians from the backend.
-            while not frontend_queue.empty():
-                frontend_queue.get()
-            backend_queue.put(["color_refinement"])
-            while True:
-                if frontend_queue.empty():
-                    time.sleep(0.01)
-                    continue
-                data = frontend_queue.get()
-                if data[0] == "sync_backend" and frontend_queue.empty():
-                    gaussians = data[1]
-                    self.gaussians = gaussians
-                    break
+            with self._phase_timer.phase("color_refinement"):
+                # re-used the frontend queue to retrive the gaussians from the backend.
+                while not frontend_queue.empty():
+                    frontend_queue.get()
+                backend_queue.put(["color_refinement"])
+                while True:
+                    if frontend_queue.empty():
+                        time.sleep(0.01)
+                        continue
+                    data = frontend_queue.get()
+                    if data[0] == "sync_backend" and frontend_queue.empty():
+                        gaussians = data[1]
+                        self.gaussians = gaussians
+                        break
 
-            rendering_result = eval_rendering(
-                self.frontend.cameras,
-                self.gaussians,
-                self.dataset,
-                self.save_dir,
-                self.pipeline_params,
-                self.background,
-                kf_indices=kf_indices,
-                iteration="after_opt",
-            )
+            gaussians_final = gaussian_count(self.gaussians)
+
+            with self._phase_timer.phase("eval_after_opt"):
+                rendering_after = eval_rendering(
+                    self.frontend.cameras,
+                    self.gaussians,
+                    self.dataset,
+                    self.save_dir,
+                    self.pipeline_params,
+                    self.background,
+                    kf_indices=kf_indices,
+                    iteration="after_opt",
+                )
             metrics_table.add_data(
                 "After",
-                rendering_result["mean_psnr"],
-                rendering_result["mean_ssim"],
-                rendering_result["mean_lpips"],
+                rendering_after["mean_psnr"],
+                rendering_after["mean_ssim"],
+                rendering_after["mean_lpips"],
                 ATE,
                 FPS,
             )
             wandb.log({"Metrics": metrics_table})
             save_gaussians(self.gaussians, self.save_dir, "final_after_opt", final=True)
 
-        backend_queue.put(["stop"])
-        backend_process.join()
-        Log("Backend stopped and joined the main thread")
-        if self.use_gui:
-            q_main2vis.put(gui_utils.GaussianPacket(finish=True))
-            gui_process.join()
-            Log("GUI Stopped and joined the main thread")
+        with self._phase_timer.phase("teardown"):
+            backend_queue.put(["stop"])
+            backend_process.join()
+            Log("Backend stopped and joined the main thread")
+            if self.use_gui:
+                q_main2vis.put(gui_utils.GaussianPacket(finish=True))
+                gui_process.join()
+                Log("GUI Stopped and joined the main thread")
+
+        self._resources.stop()
+        self._write_results(
+            timer=self._phase_timer,
+            total_s=self._phase_timer.total(),
+            fps=FPS,
+            n_frames=N_frames,
+            ate=ATE,
+            rendering_before=rendering_before,
+            rendering_after=rendering_after,
+            gaussians_after_tracking=gaussians_after_tracking,
+            gaussians_final=gaussians_final,
+        )
+
+    def _write_results(
+        self,
+        timer,
+        total_s,
+        fps,
+        n_frames,
+        ate,
+        rendering_before,
+        rendering_after,
+        gaussians_after_tracking,
+        gaussians_final,
+    ):
+        """Assemble and write ``results.json`` into the run directory."""
+        if not self.save_dir:
+            return
+
+        save_dir = self.save_dir
+        durations = dict(timer.durations)
+
+        # Fall back to the frontend's synced model when eval mode is off.
+        if gaussians_after_tracking is None:
+            gaussians_after_tracking = gaussian_count(
+                getattr(self.frontend, "gaussians", None)
+            )
+        if gaussians_final is None:
+            gaussians_final = gaussian_count(getattr(self.frontend, "gaussians", None))
+
+        payload = build_results_payload(
+            save_dir=save_dir,
+            config_path=self.config_path,
+            config=self.config,
+            eval_rendering=self.eval_rendering,
+            durations=durations,
+            total_s=total_s,
+            fps=fps,
+            n_frames=n_frames,
+            num_keyframes=len(self.frontend.kf_indices),
+            ate=ate,
+            rendering_before=rendering_before,
+            rendering_after=rendering_after,
+            gaussians_after_tracking=gaussians_after_tracking,
+            gaussians_final=gaussians_final,
+            memory=self._resources.summary(),
+        )
+
+        path = write_results_json(save_dir, payload)
+        Log("Wrote results to " + path, tag="Eval")
 
     def run(self):
         pass
@@ -252,7 +339,7 @@ if __name__ == "__main__":
         wandb.define_metric("frame_idx")
         wandb.define_metric("ate*", step_metric="frame_idx")
 
-    slam = SLAM(config, save_dir=save_dir)
+    slam = SLAM(config, save_dir=save_dir, config_path=args.config)
 
     slam.run()
     wandb.finish()

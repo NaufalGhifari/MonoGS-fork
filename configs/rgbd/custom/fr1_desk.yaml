@@ -3,6 +3,7 @@ inherit_from: "configs/rgbd/custom/base_config.yaml"
 Results:
   eval_rendering: True
   use_gui: False
+  use_wandb: True
 
 Dataset:
   dataset_path: "datasets/tum/rgbd_dataset_freiburg1_desk"
