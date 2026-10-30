@@ -139,6 +139,20 @@ python slam.py --config configs/mono/tum/fr3_office.yaml --eval
 ```
 This flag will automatically run our system in a headless mode, and log the results including the rendering metrics.
 
+Config entries can be overridden from the command line with `--set`, without editing or duplicating a config file. Keys use dots to address nested entries and values are parsed as YAML:
+```bash
+python slam.py --config configs/rgbd/tum/fr3_office.yaml --eval \
+  --set Training.gaussian_th=0.25 Training.gaussian_reset=1000
+```
+That makes a parameter sweep a plain shell loop:
+```bash
+for v in 0.1 0.25 0.5 0.7 0.9; do
+  python slam.py --config configs/rgbd/pcl/tum/fr1_desk.yaml --eval \
+    --set Training.gaussian_th=$v Results.save_dir=results/sweeps/gth${v//./}
+done
+```
+The resolved config, overrides included, is written to `config.yml` in each run directory.
+
 # Reproducibility
 There might be minor differences between the released version and the results in the paper. Please bear in mind that multi-process performance has some randomness due to GPU utilisation.
 We run all our experiments on an RTX 4090, and the performance may differ when running with a different GPU.
