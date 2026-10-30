@@ -33,6 +33,44 @@ def load_config(path, default_path=None):
     return cfg
 
 
+def apply_overrides(cfg, overrides):
+    """
+    Applies ``KEY=VALUE`` overrides to a config dict in place.
+
+    Keys use dots to address nested entries, e.g. ``Training.gaussian_th=0.25``.
+    Values are parsed as YAML, so scalars keep their type.
+
+    Args:
+        cfg (dict): config dict to modify.
+        overrides (list): entries of the form ``KEY=VALUE``.
+
+    Returns:
+        cfg (dict): the modified config dict.
+    """
+    for override in overrides:
+        key, separator, raw_value = override.partition("=")
+        key = key.strip()
+
+        if not separator or not key:
+            raise ValueError(
+                f"Malformed override {override!r}; expected KEY=VALUE, "
+                "e.g. Training.gaussian_th=0.25"
+            )
+
+        *parents, leaf = key.split(".")
+        node = cfg
+        for parent in parents:
+            child = node.setdefault(parent, {})
+            if not isinstance(child, dict):
+                raise ValueError(
+                    f"Cannot override {key!r}: {parent!r} is not a mapping"
+                )
+            node = child
+        node[leaf] = yaml.safe_load(raw_value)
+
+    return cfg
+
+
 def update_recursive(dict1, dict2):
     """
     Update two config dictionaries recursively. dict1 get masked by dict2, and we retuen dict1.

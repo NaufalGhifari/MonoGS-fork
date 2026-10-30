@@ -16,7 +16,7 @@ import wandb
 from gaussian_splatting.scene.gaussian_model import GaussianModel
 from gaussian_splatting.utils.system_utils import mkdir_p
 from gui import gui_utils, slam_gui
-from utils.config_utils import load_config
+from utils.config_utils import apply_overrides, load_config
 from utils.dataset import load_dataset
 from utils.eval_utils import eval_ate, eval_rendering, save_gaussians
 from utils.logging_utils import Log
@@ -293,6 +293,16 @@ if __name__ == "__main__":
     parser = ArgumentParser(description="Training script parameters")
     parser.add_argument("--config", type=str)
     parser.add_argument("--eval", action="store_true")
+    parser.add_argument(
+        "--set",
+        nargs="*",
+        default=[],
+        metavar="KEY=VALUE",
+        help=(
+            "Override config entries with dotted keys, "
+            "e.g. --set Training.gaussian_th=0.25"
+        ),
+    )
 
     args = parser.parse_args(sys.argv[1:])
 
@@ -315,6 +325,10 @@ if __name__ == "__main__":
         config["Results"]["eval_rendering"] = True
         Log("\tuse_wandb=False")
         config["Results"]["use_wandb"] = False
+
+    if args.set:
+        apply_overrides(config, args.set)
+        Log("Applied config overrides: " + ", ".join(args.set))
 
     if config["Results"]["save_results"]:
         mkdir_p(config["Results"]["save_dir"])

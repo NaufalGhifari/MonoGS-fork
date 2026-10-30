@@ -176,6 +176,13 @@ def eval_ate(frames, kf_ids, save_dir, iterations, final=False, monocular=False)
     ) as f:
         json.dump(trj_data, f, indent=4)
 
+    if len(kf_ids) < 3:
+        print(
+            f"\n[Warning] Skipping ATE evaluation: Umeyama alignment needs at least "
+            f"3 keyframes, got {len(kf_ids)}. Reporting RMSE as NaN"
+        )
+        return float("nan")
+
     try:
         ate = evaluate_evo(
             poses_gt=trj_gt_np,
@@ -187,17 +194,11 @@ def eval_ate(frames, kf_ids, save_dir, iterations, final=False, monocular=False)
         wandb.log({"frame_idx": latest_frame_idx, "ate": ate})
         return ate
     except Exception as e:
-        print(f"\n[Warning] Skipping ATE evaluation (No valid GT poses): {e}")
-        
-        # Safe fallback dictionary with NaN values
-        return {
-            "rmse": float('nan'),
-            "mean": float('nan'),
-            "median": float('nan'),
-            "std": float('nan'),
-            "min": float('nan'),
-            "max": float('nan')
-        }
+        print(
+            f"\n[Warning] Skipping ATE evaluation over {len(kf_ids)} keyframes "
+            f"(RMSE reported as NaN): {e}"
+        )
+        return float("nan")
 
 
 def eval_rendering(
