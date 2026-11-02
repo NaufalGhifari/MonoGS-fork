@@ -8,6 +8,8 @@ Results:
   use_wandb: False
 
 Dataset:
+  # num_frames: 600 # Limit the number of frames
+  
   sensor_type: 'depth'
   pcd_downsample: 64
   pcd_downsample_init: 32
@@ -28,7 +30,6 @@ Dataset:
     height: 680
     depth_scale: 6553.5
     distorted: False
-
 
 Training:
   init_itr_num: 1050

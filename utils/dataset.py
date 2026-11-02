@@ -17,21 +17,39 @@ except Exception:
 
 
 class ReplicaParser:
-    def __init__(self, input_folder):
+    def __init__(self, input_folder, num_frames=None, stride=1):
         self.input_folder = input_folder
         self.color_paths = sorted(glob.glob(f"{self.input_folder}/results/frame*.jpg"))
         self.depth_paths = sorted(glob.glob(f"{self.input_folder}/results/depth*.png"))
-        self.n_img = len(self.color_paths)
-        self.load_poses(f"{self.input_folder}/traj.txt")
 
-    def load_poses(self, path):
+        if stride > 1:
+            print(f"#\n# stride: {stride}\n#")
+            self.color_paths = self.color_paths[::stride]
+            self.depth_paths = self.depth_paths[::stride]
+
+        if num_frames is not None:
+            print(f"#\n# num_frames: {num_frames}\n#")
+            self.color_paths = self.color_paths[:num_frames]
+            self.depth_paths = self.depth_paths[:num_frames]
+
+        self.n_img = len(self.color_paths)
+        self.load_poses(f"{self.input_folder}/traj.txt", stride=stride)
+
+    def load_poses(self, path, stride=1):
         self.poses = []
         with open(path, "r") as f:
             lines = f.readlines()
 
+        required_lines = (self.n_img - 1) * stride + 1
+        if len(lines) < required_lines:
+            raise ValueError(
+                f"{path} has {len(lines)} poses but {required_lines} are required "
+                f"for n_img={self.n_img} at stride={stride}"
+            )
+
         frames = []
         for i in range(self.n_img):
-            line = lines[i]
+            line = lines[i * stride]
             pose = np.array(list(map(float, line.split()))).reshape(4, 4)
             pose = np.linalg.inv(pose)
             self.poses.append(pose)
@@ -420,7 +438,11 @@ class ReplicaDataset(MonocularDataset):
     def __init__(self, args, path, config):
         super().__init__(args, path, config)
         dataset_path = config["Dataset"]["dataset_path"]
-        parser = ReplicaParser(dataset_path)
+        parser = ReplicaParser(
+            dataset_path,
+            num_frames=config["Dataset"].get("num_frames", None),
+            stride=config["Dataset"].get("stride", 1),
+        )
         self.num_imgs = parser.n_img
         self.color_paths = parser.color_paths
         self.depth_paths = parser.depth_paths

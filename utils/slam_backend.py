@@ -8,7 +8,11 @@ from tqdm import tqdm
 
 from gaussian_splatting.gaussian_renderer import render
 from gaussian_splatting.utils.loss_utils import l1_loss, ssim
-from utils.logging_utils import Log, log_gradients_to_csv
+from utils.logging_utils import (
+    Log,
+    log_gaussian_stats_to_csv,
+    log_gradients_to_csv,
+)
 from utils.multiprocessing_utils import clone_obj
 from utils.pose_utils import update_pose
 from utils.results_utils import COLOR_REFINEMENT_ITERATIONS
@@ -67,6 +71,9 @@ class BackEnd(mp.Process):
 
     def set_hyperparams(self):
         self.save_results = self.config["Results"]["save_results"]
+        self.gaussian_stats_csv = os.path.join(
+            self.config["Results"]["save_dir"], "gaussian_stats.csv"
+        )
 
         self.init_itr_num = self.config["Training"]["init_itr_num"]
         self.init_gaussian_update = self.config["Training"]["init_gaussian_update"]
@@ -89,6 +96,18 @@ class BackEnd(mp.Process):
             self.config["Dataset"]["single_thread"]
             if "single_thread" in self.config["Dataset"]
             else False
+        )
+
+    def _log_gaussian_stats(self, frame_idx, trigger):
+        if not self.save_results:
+            return
+        log_gaussian_stats_to_csv(
+            self.gaussian_stats_csv,
+            frame_idx,
+            self.iteration_count,
+            trigger,
+            self.gaussians.get_xyz.shape[0],
+            int(self.gaussians.unique_kfIDs.unique().numel()),
         )
 
     def add_next_kf(self, frame_idx, viewpoint, init=False, scale=2.0, depth_map=None):
@@ -374,6 +393,7 @@ class BackEnd(mp.Process):
                         self.size_threshold,
                     )
                     gaussian_split = True
+                    self._log_gaussian_stats(resolved_frame_idx, "densify")
 
                 ## Opacity reset
                 if (self.iteration_count % self.gaussian_reset) == 0 and (
@@ -382,6 +402,7 @@ class BackEnd(mp.Process):
                     Log("Resetting the opacity of non-visible Gaussians")
                     self.gaussians.reset_opacity_nonvisible(visibility_filter_acm)
                     gaussian_split = True
+                    self._log_gaussian_stats(resolved_frame_idx, "reset")
 
                 # self.gaussians.optimizer.step()
                 self.gaussians_optimizer_step()

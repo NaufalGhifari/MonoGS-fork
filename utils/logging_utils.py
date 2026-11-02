@@ -49,3 +49,25 @@ def log_gradients_to_csv(filepath, frame_idx, itr, loss_val, named_parameters):
 
     with open(filepath, "a") as f:
         f.writelines(log_lines)
+
+
+def log_gaussian_stats_to_csv(
+    filepath, frame_idx, itr, trigger, num_gaussians, num_keyframes
+):
+    """
+    Records the map size whenever it changes (densification or opacity reset).
+
+    Written once per event rather than per iteration: nothing modifies the
+    Gaussian count between events, so this captures the full growth curve.
+    """
+    if not os.path.exists(filepath):
+        dirname = os.path.dirname(filepath)
+        if dirname:
+            os.makedirs(dirname, exist_ok=True)
+        with open(filepath, "w") as f:
+            f.write("frame_idx,iteration,trigger,num_gaussians,num_keyframes\n")
+
+    with open(filepath, "a") as f:
+        f.write(
+            f"{frame_idx},{itr},{trigger},{num_gaussians},{num_keyframes}\n"
+        )

@@ -153,6 +153,20 @@ done
 ```
 The resolved config, overrides included, is written to `config.yml` in each run directory.
 
+`Dataset.num_frames` and `Dataset.stride` are supported for both TUM and Replica datasets, so a sequence can be capped or subsampled without editing files:
+```bash
+python slam.py --config configs/rgbd/replica/room0.yaml --eval \
+  --set Dataset.stride=3 Dataset.num_frames=600 Training.kf_interval=3
+```
+`kf_interval` counts frames, so divide it by the stride to keep keyframe spacing unchanged.
+
+Every run writes `gaussian_stats.csv` (map size after each densification or opacity reset) alongside `results.json`. To compare a sweep, point the summariser at the sweep root:
+```bash
+python scripts/summarize_sweep.py --root results/sweeps
+python scripts/summarize_sweep.py --root results/sweeps --baseline 0.7 --csv sweep.csv
+```
+It reads `gaussian_th` and the dataset protocol from each run's `config.yml`, the metrics from `results.json`, prints one table per scene with normalised columns (`N/N0`, `dPSNR`, `T/T0` relative to the densest run unless `--baseline` is given), and lists run directories that crashed before writing results.
+
 # Reproducibility
 There might be minor differences between the released version and the results in the paper. Please bear in mind that multi-process performance has some randomness due to GPU utilisation.
 We run all our experiments on an RTX 4090, and the performance may differ when running with a different GPU.
