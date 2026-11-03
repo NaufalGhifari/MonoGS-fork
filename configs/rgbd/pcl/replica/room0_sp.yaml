@@ -1,5 +1,7 @@
 inherit_from: "configs/rgbd/pcl/replica/base_config.yaml"
+
 Dataset:
   dataset_path: "datasets/replica/room0/"
   single_thread: True
-  num_frames: 600 # Limit the number of frames
+  # num_frames: 600 # Limit the number of frames
+  stride: 3
